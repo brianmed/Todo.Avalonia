@@ -1,24 +1,42 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Collections.Specialized;
-using System.ComponentModel;
+using System.Linq;
+using System.Reactive.Linq;
 
 using Microsoft.Extensions.DependencyInjection;
 
+using DynamicData;
+using DynamicData.Binding;
 using Mapster;
+using ReactiveUI;
 
 using Todo.FormDto;
 using Todo.Services;
 
 namespace Todo.ViewModels
 {
-    public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
+    public class MainWindowViewModel : ReactiveObject, IActivatableViewModel
     {
-        public ObservableCollection<TodoFormDto> Todos { get; private set; }
+        public ViewModelActivator Activator { get; }
+
+        public ObservableCollection<TodoFormDto> Todos { get; private set; } = new();
+
+        private ObservableAsPropertyHelper<bool> _HasTodos;
+        private bool HasTodos => _HasTodos.Value;
+
+        private string TodoTitle { get; set; }
 
         public MainWindowViewModel()
         {
+            Activator = new();
+
+            Todos.ToObservableChangeSet(t => t.TodoEntityId)
+                .AsObservableCache()
+                .CountChanged
+                .Select(v => v > 0)
+                .ToProperty(this, vm => vm.HasTodos, out _HasTodos);
+
             using (IServiceScope serviceScope = Program.Host.Services.CreateScope())
             {
                 IServiceProvider services = serviceScope.ServiceProvider;
@@ -26,56 +44,12 @@ namespace Todo.ViewModels
                 ITodoService todoService = services
                     .GetRequiredService<ITodoService>();
 
-                Todos = new ObservableCollection<TodoFormDto>(todoService.ReadAsync()
-                    .GetAwaiter().GetResult().Adapt<IEnumerable<TodoFormDto>>());
-
-                _HasTodos = Todos.Count > 0;
+                Todos.AddRange(todoService.ReadAsync().GetAwaiter().GetResult()
+                    .Adapt<IEnumerable<TodoFormDto>>());
             }            
-
-            Todos.CollectionChanged += OnCollectionChanged;
         }
 
-        ~MainWindowViewModel()
-        {
-            Todos.CollectionChanged -= OnCollectionChanged;
-        }
-
-        private bool _HasTodos;
-        public bool HasTodos
-        {
-            get
-            {
-                return _HasTodos;
-            }
-
-            set
-            {
-                _HasTodos = value;
-
-                OnPropertyChanged(nameof(HasTodos));
-            }
-        }
-
-        void OnCollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
-        {
-            ObservableCollection<TodoFormDto> todos = sender as ObservableCollection<TodoFormDto>;
-
-            _HasTodos = todos.Count > 0;
-
-            OnPropertyChanged(nameof(HasTodos));
-        }
-
-        public event PropertyChangedEventHandler PropertyChanged;
-
-        public void OnPropertyChanged(string name)
-        {
-            if (this.PropertyChanged != null)
-            {
-                this.PropertyChanged(this, new PropertyChangedEventArgs(name));
-            }
-        }
-
-        public void AddTodo(string title)
+        public void OnAddButtonClicked()
         {
             using (IServiceScope serviceScope = Program.Host.Services.CreateScope())
             {
@@ -85,10 +59,24 @@ namespace Todo.ViewModels
                     .GetRequiredService<ITodoService>();
 
                 TodoFormDto todo = todoService
-                    .CreateAsync(title)
+                    .CreateAsync(TodoTitle)
                     .GetAwaiter().GetResult().Adapt<TodoFormDto>();
 
                 Todos.Insert(0, todo);
+            }
+        }
+
+        public void OnDoneCheckboxClicked(TodoFormDto todo)
+        {
+            using (IServiceScope serviceScope = Program.Host.Services.CreateScope())
+            {
+                IServiceProvider services = serviceScope.ServiceProvider;
+
+                ITodoService todoService = services
+                    .GetRequiredService<ITodoService>();
+
+                todo.IsDone = todoService.ToggleAsync(todo.TodoEntityId)
+                    .GetAwaiter().GetResult();
             }
         }
     }
