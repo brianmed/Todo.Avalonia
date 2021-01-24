@@ -16,15 +16,17 @@
         </StackPanel>
         
         <Border BorderBrush="Black" BorderThickness="1" CornerRadius="3" Margin="0 15 0 0 " IsVisible="{Binding HasTodos}">
-            <ListBox Items="{Binding Todos}" MaxHeight="400">
-                <ListBox.ItemTemplate>
-                    <DataTemplate>
-                        <CheckBox Margin="4">
-                            <TextBlock Text="{Binding Title}"/>
-                        </CheckBox>
-                    </DataTemplate>
-                </ListBox.ItemTemplate>
-            </ListBox>    
+            <ScrollViewer HorizontalScrollBarVisibility="Visible" Height="400">
+                <ItemsControl Items="{Binding Todos}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <CheckBox Margin="4" IsChecked="{Binding IsDone}" Click="OnDoneCheckboxClicked">
+                                <TextBlock Text="{Binding Title}"/>
+                            </CheckBox>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>    
+            </ScrollViewer>
         </Border>
     </StackPanel>
 

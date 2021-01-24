@@ -14,6 +14,8 @@ namespace Todo.Services
         Task<TodoEntity> CreateAsync(string title);
 
         Task<List<TodoEntity>> ReadAsync();
+
+        Task<bool> ToggleAsync(long entityTodoId);
     }
 
     public class TodoService : ITodoService
@@ -47,6 +49,25 @@ namespace Todo.Services
         async public Task<List<TodoEntity>> ReadAsync()
         {
             return await TodoRepository.ReadAsync();
+        }
+
+        async public Task<TodoEntity> ReadAsync(long entityTodoId)
+        {
+            return await TodoRepository.ReadAsync(entityTodoId);
+        }
+
+        async public Task<bool> ToggleAsync(long entityTodoId)
+        {
+            TodoEntity todoEntity = TodoRepository
+                .ReadAsync(entityTodoId)
+                .GetAwaiter().GetResult();
+
+            todoEntity.IsDone = !todoEntity.IsDone;
+
+            TodoRepository.UpdateAsync(todoEntity)
+                .GetAwaiter().GetResult();
+
+            return todoEntity.IsDone;
         }
     }
 }

@@ -14,8 +14,9 @@ namespace Todo.Repositories
     {
         Task<TodoEntity> CreateAsync(TodoEntity todo);
         Task<List<TodoEntity>> ReadAsync();
+        Task<TodoEntity> ReadAsync(long entityTodoId);
         Task<TodoEntity> UpdateAsync(TodoEntity todo);
-        Task<bool> DeleteAsync(long id);
+        Task<bool> DeleteAsync(long entityTodoId);
         Task<bool> DeleteAsync(TodoEntity todo);
     }
 
@@ -23,9 +24,7 @@ namespace Todo.Repositories
     {
         private TodoDbContext DbContext { get; init; }
 
-        public TodoRepository(
-            TodoDbContext dbContext
-        )
+        public TodoRepository(TodoDbContext dbContext)
         {
             DbContext = dbContext;
         }
@@ -39,18 +38,18 @@ namespace Todo.Repositories
             return todo;
         }
 
-        public List<TodoEntity> Read()
-        {
-            return DbContext.Todos
-                .OrderByDescending(v => v.TodoEntityId)
-                .ToList();
-        }
-
         async public Task<List<TodoEntity>> ReadAsync()
         {
             return await DbContext.Todos
                 .OrderByDescending(v => v.TodoEntityId)
                 .ToListAsync();
+        }
+
+        async public Task<TodoEntity> ReadAsync(long TodoEntityId)
+        {
+            return await DbContext.Todos
+                .Where(v => v.TodoEntityId == TodoEntityId)
+                .SingleAsync();
         }
 
         async public Task<TodoEntity> UpdateAsync(TodoEntity todo)
