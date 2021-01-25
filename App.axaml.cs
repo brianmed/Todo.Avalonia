@@ -13,7 +13,6 @@ using Todo.AppCtx;
 using Todo.DbContexts;
 using Todo.Repositories;
 using Todo.Services;
-using Todo.ViewModels;
 using Todo.Views;
 
 namespace Todo
@@ -58,7 +57,7 @@ namespace Todo
                 }
                 catch (Exception ex)
                 {
-                    LoggingCtx.LogApp.Fatal(ex, "Issue While Running");
+                    LoggingCtx.LogApp.Fatal(ex, "Issue While Migrating");
 
                     Environment.Exit(1);
                 }

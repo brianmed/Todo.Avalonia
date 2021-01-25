@@ -19,7 +19,7 @@ namespace Todo.Views
     {
         public MainWindow()
         {
-            ViewModel = new MainWindowViewModel();
+            ViewModel = ViewModelBase.Create<MainWindowViewModel>();
 
             InitializeComponent();
         }

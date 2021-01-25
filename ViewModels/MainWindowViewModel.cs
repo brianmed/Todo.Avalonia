@@ -16,7 +16,7 @@ using Todo.Services;
 
 namespace Todo.ViewModels
 {
-    public class MainWindowViewModel : ReactiveObject, IActivatableViewModel
+    public class MainWindowViewModel : ViewModelBase, IActivatableViewModel
     {
         public ViewModelActivator Activator { get; }
 
@@ -25,10 +25,20 @@ namespace Todo.ViewModels
         private ObservableAsPropertyHelper<bool> _HasTodos;
         private bool HasTodos => _HasTodos.Value;
 
-        private string TodoTitle { get; set; }
 
-        public MainWindowViewModel()
+        private string _TodoTitle;
+        public string TodoTitle
         {
+            get => _TodoTitle;
+            set => this.RaiseAndSetIfChanged(ref _TodoTitle, value);
+        }
+
+        private ITodoService TodoService { get; init; }
+
+        public MainWindowViewModel(ITodoService todoService)
+        {
+            TodoService = todoService;
+
             Activator = new();
 
             Todos.ToObservableChangeSet(t => t.TodoEntityId)
@@ -37,47 +47,25 @@ namespace Todo.ViewModels
                 .Select(v => v > 0)
                 .ToProperty(this, vm => vm.HasTodos, out _HasTodos);
 
-            using (IServiceScope serviceScope = Program.Host.Services.CreateScope())
-            {
-                IServiceProvider services = serviceScope.ServiceProvider;
-
-                ITodoService todoService = services
-                    .GetRequiredService<ITodoService>();
-
-                Todos.AddRange(todoService.ReadAsync().GetAwaiter().GetResult()
-                    .Adapt<IEnumerable<TodoFormDto>>());
-            }            
+            Todos.AddRange(TodoService.ReadAsync().GetAwaiter().GetResult()
+                .Adapt<IEnumerable<TodoFormDto>>());
         }
 
         public void OnAddButtonClicked()
         {
-            using (IServiceScope serviceScope = Program.Host.Services.CreateScope())
-            {
-                IServiceProvider services = serviceScope.ServiceProvider;
+            TodoFormDto todo = TodoService
+                .CreateAsync(TodoTitle)
+                .GetAwaiter().GetResult().Adapt<TodoFormDto>();
 
-                ITodoService todoService = services
-                    .GetRequiredService<ITodoService>();
+            Todos.Insert(0, todo);
 
-                TodoFormDto todo = todoService
-                    .CreateAsync(TodoTitle)
-                    .GetAwaiter().GetResult().Adapt<TodoFormDto>();
-
-                Todos.Insert(0, todo);
-            }
+            TodoTitle = String.Empty;
         }
 
         public void OnDoneCheckboxClicked(TodoFormDto todo)
         {
-            using (IServiceScope serviceScope = Program.Host.Services.CreateScope())
-            {
-                IServiceProvider services = serviceScope.ServiceProvider;
-
-                ITodoService todoService = services
-                    .GetRequiredService<ITodoService>();
-
-                todo.IsDone = todoService.ToggleAsync(todo.TodoEntityId)
-                    .GetAwaiter().GetResult();
-            }
+            todo.IsDone = TodoService.ToggleAsync(todo.TodoEntityId)
+                .GetAwaiter().GetResult();
         }
     }
 }
