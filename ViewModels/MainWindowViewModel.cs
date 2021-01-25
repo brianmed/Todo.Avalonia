@@ -16,15 +16,12 @@ using Todo.Services;
 
 namespace Todo.ViewModels
 {
-    public class MainWindowViewModel : ViewModelBase, IActivatableViewModel
+    public class MainWindowViewModel : ViewModelBase
     {
-        public ViewModelActivator Activator { get; }
-
         public ObservableCollection<TodoFormDto> Todos { get; private set; } = new();
 
         private ObservableAsPropertyHelper<bool> _HasTodos;
         private bool HasTodos => _HasTodos.Value;
-
 
         private string _TodoTitle;
         public string TodoTitle
@@ -38,8 +35,6 @@ namespace Todo.ViewModels
         public MainWindowViewModel(ITodoService todoService)
         {
             TodoService = todoService;
-
-            Activator = new();
 
             Todos.ToObservableChangeSet(t => t.TodoEntityId)
                 .AsObservableCache()
