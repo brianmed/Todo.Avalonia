@@ -38,37 +38,28 @@ namespace Todo
 
                     services.AddScoped<ITodoRepository, TodoRepository>();
                     services.AddScoped<ITodoService, TodoService>();
-                })
-                .UseConsoleLifetime();
+                });
     
-            Program.Host = builder.Build();            
+            Program.Host = builder.Build();
 
-            using (IServiceScope serviceScope = Program.Host.Services.CreateScope())
-            {
-                IServiceProvider services = serviceScope.ServiceProvider;
-
+            DependencyInjection.Scoped.Run((TodoDbContext dbContext) => {
                 try
                 {
-                    TodoDbContext dbContext = services.GetRequiredService<TodoDbContext>();
-
                     dbContext.Database.Migrate();
 
-                    LoggingCtx.LogApp.Information("Migration Finished");
+                    LoggingCtx.LogApp.Information("Database Migration Finished");
                 }
                 catch (Exception ex)
                 {
-                    LoggingCtx.LogApp.Fatal(ex, "Issue While Migrating");
+                    LoggingCtx.LogApp.Fatal(ex, "Issue While Running");
 
                     Environment.Exit(1);
                 }
-            }            
+            });            
 
             if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
             {
                 desktop.MainWindow = new MainWindow();
-                // {
-                //     DataContext = new MainWindowViewModel(),
-                // };
             }
 
             base.OnFrameworkInitializationCompleted();

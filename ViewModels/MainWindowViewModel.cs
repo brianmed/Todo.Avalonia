@@ -4,13 +4,12 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Reactive.Linq;
 
-using Microsoft.Extensions.DependencyInjection;
-
 using DynamicData;
 using DynamicData.Binding;
 using Mapster;
 using ReactiveUI;
 
+using Todo.DependencyInjection;
 using Todo.FormDto;
 using Todo.Services;
 
